@@ -34,14 +34,15 @@ button, input, textarea, select { font: inherit; }
 .kicker { display: block; margin-bottom: 7px; color: #78a9ff; font: 600 11px/1.2 "IBM Plex Mono", monospace; letter-spacing: .14em; }
 .hero-copy h2 { margin: 0; font-size: clamp(26px, 3.6vw, 45px); line-height: 1.12; letter-spacing: -.025em; }
 .hero-copy p { max-width: 660px; margin: 12px 0 0; color: #c6c6c6; font-size: 14px; }
-.hero-stats { z-index: 1; display: grid; grid-template-columns: repeat(4, minmax(78px, 1fr)); background: rgba(255,255,255,.08); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.12); }
+.hero-stats { z-index: 1; display: grid; grid-template-columns: repeat(5, minmax(78px, 1fr)); background: rgba(255,255,255,.08); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.12); }
 .hero-stats div { padding: 16px; text-align: center; border-left: 1px solid rgba(255,255,255,.1); }
 .hero-stats div:first-child { border-left: 0; }
 .hero-stats strong { display: block; font: 600 24px/1.1 "IBM Plex Mono", monospace; }
 .hero-stats span { color: #c6c6c6; font-size: 10px; }
 .hero-stats .critical { color: #ff8389; }
 .hero-stats .caution { color: #f1c21b; }
-.workspace-tabs { padding: 0 clamp(20px, 4vw, 60px); display: grid; grid-template-columns: repeat(4, 1fr); background: #fff; border-bottom: 1px solid #d8d8d8; }
+.hero-stats .gap { color: #a56eff; }
+.workspace-tabs { padding: 0 clamp(20px, 4vw, 60px); display: grid; grid-template-columns: repeat(5, 1fr); background: #fff; border-bottom: 1px solid #d8d8d8; }
 .workspace-tabs button { min-height: 78px; border: 0; border-right: 1px solid #e0e0e0; padding: 14px 16px; display: grid; grid-template-columns: 34px 1fr; grid-template-rows: auto auto; text-align: left; color: #525252; background: #fff; cursor: pointer; }
 .workspace-tabs button:first-child { border-left: 1px solid #e0e0e0; }
 .workspace-tabs button.active { color: #fff; background: #0f62fe; }
@@ -79,7 +80,7 @@ button, input, textarea, select { font: inherit; }
 .editor-column { background: #f4f4f4; }
 .editor-toolbar { margin-bottom: 14px; }
 .editor-toolbar > div:last-child { display: flex; gap: 4px; flex-wrap: wrap; }
-.editor-card, .dependency-card, .compact-card { width: 100%; margin: 0 0 14px; padding: 20px; border: 1px solid #e0e0e0; background: #fff; box-shadow: none; }
+.editor-card, .objective-card, .dependency-card, .compact-card { width: 100%; margin: 0 0 14px; padding: 20px; border: 1px solid #e0e0e0; background: #fff; box-shadow: none; }
 .form-grid { display: grid; grid-template-columns: 1.4fr 1fr .65fr .9fr; gap: 16px; align-items: start; margin-bottom: 14px; }
 .editor-card :global(.bx--text-input__field-wrapper), .editor-card :global(.bx--select) { margin-bottom: 12px; }
 .difficulty-field { padding-top: 23px; }
@@ -87,6 +88,11 @@ button, input, textarea, select { font: inherit; }
 .difficulty-field input { width: 100%; accent-color: #0f62fe; }
 .section-title p { margin: 4px 0 0; color: #6f6f6f; font-size: 11px; }
 .dependency-grid { margin-top: 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 18px; }
+.objective-link-grid { margin-top: 16px; display: grid; gap: 8px; }
+.objective-link-row { padding: 8px 12px; display: grid; grid-template-columns: 1fr 190px; gap: 12px; align-items: center; border: 1px solid #e0e0e0; }
+.objective-link-row.linked { border-left: 3px solid #8a3ffc; background: #fbf9ff; }
+.objective-link-row :global(.bx--form-item) { margin: 0; }
+.link-hint { color: #a8a8a8; font-size: 10px; text-align: right; }
 .inspector { padding: 14px; }
 .compact-card :global(.bx--text-input), .compact-card :global(.bx--text-area), .compact-card :global(.bx--select-input) { margin-bottom: 9px; }
 .issue-peek { margin-top: 14px; }
@@ -98,7 +104,7 @@ button, input, textarea, select { font: inherit; }
 .peek-row b { color: #393939; font-size: 11px; }
 .peek-row small { color: #8d8d8d; font-size: 9px; }
 .empty-state { color: #6f6f6f; font-size: 12px; line-height: 1.6; }
-.path-view, .issues-view, .versions-view { padding: 30px clamp(20px, 4vw, 60px) 44px; }
+.path-view, .issues-view, .versions-view, .coverage-view { padding: 30px clamp(20px, 4vw, 60px) 44px; }
 .path-toolbar, .view-heading { display: flex; justify-content: space-between; align-items: end; gap: 28px; margin-bottom: 24px; }
 .path-toolbar h2, .view-heading h2 { margin: 0; font-size: 28px; letter-spacing: -.02em; }
 .path-toolbar p, .view-heading p { margin: 7px 0 0; color: #6f6f6f; font-size: 13px; }
@@ -130,6 +136,7 @@ button, input, textarea, select { font: inherit; }
 .lesson-content small { color: #8d8d8d; font-size: 10px; }
 .lesson-tags { display: flex; flex-wrap: wrap; gap: 5px; margin: 7px 0; }
 .lesson-tags span { padding: 2px 6px; color: #004144; background: #d9fbfb; font: 500 10px "IBM Plex Mono", monospace; }
+.lesson-tags span.objective-chip { color: #6929c4; background: #f6f2ff; font-family: "Noto Sans SC", sans-serif; }
 .lesson-tags em { margin-left: auto; color: #6f6f6f; font-size: 10px; font-style: normal; }
 .lesson-preview footer { padding: 18px; text-align: center; color: #fff; background: #161616; font-size: 11px; }
 .device-preview.phone .lesson-preview { padding: 12px; }
@@ -149,7 +156,7 @@ button, input, textarea, select { font: inherit; }
 .issue-meta small { color: #8d8d8d; font-size: 10px; }
 .issue-board h3 { margin: 7px 0 3px; font-size: 14px; }
 .issue-board p { margin: 0; color: #6f6f6f; font-size: 12px; }
-.rule-grid { margin-top: 18px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.rule-grid { margin-top: 18px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .rule-grid > div { margin: 0; padding: 18px; border-top: 3px solid #0f62fe; }
 .rule-grid span { color: #6f6f6f; font-size: 10px; }
 .rule-grid strong { display: block; margin: 5px 0; font-size: 18px; }
@@ -178,6 +185,34 @@ button, input, textarea, select { font: inherit; }
 .diff-list article.removed > span { color: #a2191f; }
 .diff-list b { font-size: 12px; }
 .diff-list p { margin: 3px 0 0; color: #6f6f6f; font-size: 10px; }
+.coverage-layout { display: grid; grid-template-columns: 350px minmax(0, 1fr); gap: 12px; align-items: start; }
+.objective-manager { margin: 0; padding: 22px; border: 1px solid #e0e0e0; }
+.objective-list { margin: 16px 0; border-top: 1px solid #e0e0e0; }
+.objective-row { width: 100%; padding: 10px 12px; display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: center; border: 0; border-bottom: 1px solid #e0e0e0; text-align: left; color: #393939; background: #fff; cursor: pointer; }
+.objective-row:hover { background: #f4f4f4; }
+.objective-row.selected { color: #fff; background: #161616; box-shadow: inset 4px 0 #8a3ffc; }
+.objective-code { color: #6929c4; font: 600 11px "IBM Plex Mono", monospace; }
+.objective-row.selected .objective-code { color: #c8a2ff; }
+.objective-copy b, .objective-copy small { display: block; }
+.objective-copy b { font-size: 12px; }
+.objective-copy small { margin-top: 2px; color: #8d8d8d; font-size: 9px; }
+.objective-row.selected .objective-copy small { color: #c6c6c6; }
+.objective-editor { padding: 14px 0; border-top: 1px solid #e0e0e0; }
+.objective-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+.objective-add { padding-top: 14px; border-top: 1px solid #e0e0e0; display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; }
+.coverage-table-wrap { overflow-x: auto; border: 1px solid #e0e0e0; background: #fff; }
+.coverage-table { width: 100%; min-width: 760px; border-collapse: collapse; }
+.coverage-table th { padding: 12px 14px; text-align: left; color: #6f6f6f; font-size: 10px; font-weight: 600; letter-spacing: .1em; border-bottom: 2px solid #161616; }
+.coverage-table td { padding: 13px 14px; border-bottom: 1px solid #e0e0e0; vertical-align: top; }
+.coverage-objective span { color: #6929c4; font: 600 10px "IBM Plex Mono", monospace; }
+.coverage-objective b { display: block; max-width: 220px; margin-top: 3px; font-size: 12px; }
+.coverage-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.coverage-chip { padding: 4px 9px; border: 1px solid #a6c8ff; color: #0043ce; background: #edf5ff; font-size: 10px; cursor: pointer; }
+.coverage-chip.consolidate { border-color: #9ef0f0; color: #005d5d; background: #d9fbfb; }
+.coverage-chip:hover { filter: brightness(.94); }
+.empty-cell { color: #a8a8a8; font-size: 11px; }
+.order-ok { color: #198038; font-size: 11px; white-space: nowrap; }
+.order-bad { color: #da1e28; font-size: 11px; white-space: nowrap; }
 .app-footer { min-height: 46px; padding: 14px 24px; display: flex; justify-content: space-between; gap: 20px; color: #c6c6c6; background: #262626; font-size: 10px; }
 @media (max-width: 1180px) {
   .compose-layout { grid-template-columns: 280px 1fr; }
@@ -198,7 +233,9 @@ button, input, textarea, select { font: inherit; }
   .inspector, .path-toolbar, .view-heading { display: flex; align-items: stretch; flex-direction: column; }
   .preview-stage { padding: 8px; }
   .device-preview.tablet, .device-preview.desktop { width: 100%; }
-  .rule-grid, .version-layout-svelte { grid-template-columns: 1fr; }
+  .rule-grid, .version-layout-svelte, .coverage-layout { grid-template-columns: 1fr; }
+  .objective-link-row { grid-template-columns: 1fr; }
+  .link-hint { text-align: left; }
   .issue-board > article { grid-template-columns: 38px 1fr; }
   .issue-board > article > button { grid-column: 2; width: fit-content; }
 }
