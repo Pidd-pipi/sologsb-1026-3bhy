@@ -13,9 +13,22 @@
   } from 'carbon-components-svelte';
 
   type ActivityType = '音素' | '单词' | '句子' | '练习';
-  type ViewMode = 'compose' | 'path' | 'issues' | 'versions';
+  type ViewMode = 'compose' | 'coverage' | 'path' | 'issues' | 'versions';
   type PreviewWidth = 'phone' | 'tablet' | 'desktop';
   type IssueLevel = 'error' | 'warning' | 'info';
+  type LinkPhase = 'introduce' | 'reinforce';
+
+  interface Objective {
+    id: string;
+    no: number;
+    title: string;
+    detail: string;
+  }
+
+  interface ObjectiveLink {
+    objectiveId: string;
+    phase: LinkPhase;
+  }
 
   interface Activity {
     id: string;
@@ -24,6 +37,7 @@
     content: string;
     phonemes: string[];
     dependencies: string[];
+    objectiveLinks: ObjectiveLink[];
     difficulty: number;
     prompt: string;
     accessibility: string;
@@ -36,6 +50,7 @@
     label: string;
     savedAt: string;
     note: string;
+    objectives: Objective[];
     activities: Activity[];
   }
 
@@ -45,6 +60,7 @@
     level: string;
     ageRange: string;
     objective: string;
+    objectives: Objective[];
     activities: Activity[];
     versions: CourseVersion[];
     updatedAt: string;
@@ -57,6 +73,7 @@
     category: string;
     title: string;
     detail: string;
+    target?: 'coverage';
   }
 
   interface VersionDiff {
@@ -64,6 +81,20 @@
     title: string;
     kind: 'added' | 'removed' | 'changed';
     detail: string;
+  }
+
+  interface CoverageEntry {
+    activity: Activity;
+    index: number;
+    phase: LinkPhase;
+  }
+
+  interface CoverageRow {
+    objective: Objective;
+    introduce: CoverageEntry[];
+    reinforce: CoverageEntry[];
+    orderIssues: { reinforceEntry: CoverageEntry; firstIntroduceIndex: number }[];
+    status: 'complete' | 'gap' | 'empty';
   }
 
   const STORAGE_KEY = 'sologsb-1026-phonics-course-v1';
@@ -78,52 +109,68 @@
     ageRange: '5–6 岁',
     objective: '建立音素意识，能听辨、拼读并书写短元音单词。',
     updatedAt: '2026-09-24T16:20:00+08:00',
+    objectives: [
+      { id: 'o-1', no: 1, title: '识别并发出辅音 /m/', detail: '能在听到 /m/ 时做出反应，观察口型并发音。' },
+      { id: 'o-2', no: 2, title: '区分首音 /m/ 与 /s/', detail: '能听辨以 /m/、/s/ 开头的单词并选出正确图片。' },
+      { id: 'o-3', no: 3, title: '拼读音素 /s/ /æ/ /t/', detail: '能按 s – a – t 顺序拼出短词 sat。' },
+      { id: 'o-4', no: 4, title: '朗读 CVC 句型', detail: '能逐词朗读并连读 Mat sat on the mat 等短句。' },
+      { id: 'o-5', no: 5, title: '识别短元音 /ɪ/', detail: '能听辨并拼读含 /ɪ/ 的短词（示例中尚未安排活动）。' }
+    ],
     activities: [
       {
         id: 'a-1', type: '音素', title: '听音游戏：认识 /m/', content: '/m/',
-        phonemes: ['/m/'], dependencies: [], difficulty: 1,
+        phonemes: ['/m/'], dependencies: [], objectiveLinks: [{ objectiveId: 'o-1', phase: 'introduce' }], difficulty: 1,
         prompt: '闭上嘴唇，轻轻发出 /m/，感受鼻子的震动。',
         accessibility: '提供口型示范图和可重复播放的低频音频。', duration: 6, feedback: ''
       },
       {
         id: 'a-2', type: '音素', title: '首音识别：/s/ 与 /m/', content: '/s/ /m/',
-        phonemes: ['/s/', '/m/'], dependencies: ['a-1'], difficulty: 1,
+        phonemes: ['/s/', '/m/'], dependencies: ['a-1'], objectiveLinks: [
+          { objectiveId: 'o-1', phase: 'reinforce' },
+          { objectiveId: 'o-2', phase: 'introduce' }
+        ], difficulty: 1,
         prompt: '听到单词时拍手，听到 /m/ 时把手放在鼻子上。',
         accessibility: '视觉提示使用不同形状，不只依赖颜色。', duration: 8, feedback: ''
       },
       {
         id: 'a-3', type: '单词', title: '拼读短词：sat', content: 's – a – t → sat',
-        phonemes: ['/s/', '/æ/', '/t/'], dependencies: ['a-2'], difficulty: 2,
+        phonemes: ['/s/', '/æ/', '/t/'], dependencies: ['a-2'], objectiveLinks: [{ objectiveId: 'o-3', phase: 'introduce' }], difficulty: 2,
         prompt: '用手指依次点每个字母，再连起来读。',
         accessibility: '字母块支持键盘逐字聚焦和屏幕阅读器朗读。', duration: 10, feedback: '三条电缆拼在一起形成完整电路。'
       },
       {
         id: 'a-4', type: '练习', title: '听音选图：m / s 开头', content: 'moon, sun, mat, sock',
-        phonemes: ['/m/', '/s/'], dependencies: ['a-2'], difficulty: 2,
+        phonemes: ['/m/', '/s/'], dependencies: ['a-2'], objectiveLinks: [{ objectiveId: 'o-2', phase: 'reinforce' }], difficulty: 2,
         prompt: '先听单词，再从两张图片中选出正确首音。',
         accessibility: '所有图片均配替代文本，可只用键盘选择。', duration: 8, feedback: ''
       },
       {
         id: 'a-5', type: '音素', title: '短元音 /æ/ 的口型', content: '/æ/',
-        phonemes: ['/æ/'], dependencies: ['a-1'], difficulty: 2,
+        phonemes: ['/æ/'], dependencies: ['a-1'], objectiveLinks: [], difficulty: 2,
         prompt: '嘴巴张大，舌尖放低，声音短而有力。',
         accessibility: '提供正面口型、侧面舌位和慢速音频。', duration: 6, feedback: ''
       },
       {
         id: 'a-6', type: '句子', title: '拼读句子：Mat sat.', content: 'Mat sat on the mat.',
-        phonemes: ['/m/', '/æ/', '/s/', '/t/'], dependencies: ['a-3'], difficulty: 3,
+        phonemes: ['/m/', '/æ/', '/s/', '/t/'], dependencies: ['a-3'], objectiveLinks: [
+          { objectiveId: 'o-3', phase: 'reinforce' },
+          { objectiveId: 'o-4', phase: 'introduce' }
+        ], difficulty: 3,
         prompt: '先读每个单词，再按意群连读句子。',
         accessibility: '句子可按词高亮，并提供更大字号选项。', duration: 10, feedback: '读对了，再试试让声音更连贯。'
       },
       {
         id: 'a-7', type: '练习', title: '把单词和图片配对', content: 'mat · map · sun · sock',
-        phonemes: ['/m/', '/æ/', '/s/'], dependencies: ['a-3', 'a-4'], difficulty: 3,
+        phonemes: ['/m/', '/æ/', '/s/'], dependencies: ['a-3', 'a-4'], objectiveLinks: [
+          { objectiveId: 'o-1', phase: 'reinforce' },
+          { objectiveId: 'o-2', phase: 'reinforce' }
+        ], difficulty: 3,
         prompt: '读出单词，然后把单词卡拖到对应图片。',
         accessibility: '支持键盘选择起点和终点，不使用拖拽也能完成。', duration: 12, feedback: '答对后播放该单词的分解音。'
       },
       {
         id: 'a-8', type: '句子', title: '迁移朗读：A man sat.', content: 'A man sat and had a nap.',
-        phonemes: ['/m/', '/æ/', '/n/'], dependencies: ['a-6'], difficulty: 4,
+        phonemes: ['/m/', '/æ/', '/n/'], dependencies: ['a-6'], objectiveLinks: [{ objectiveId: 'o-4', phase: 'reinforce' }], difficulty: 4,
         prompt: '观察 a 和 man 之间的联系，再完整朗读。',
         accessibility: '提供分句导航、朗读速度控制和高对比模式。', duration: 12, feedback: ''
       }
@@ -131,25 +178,27 @@
     versions: [
       {
         id: 'v-1', label: '初稿', savedAt: '2026-09-21T10:00:00+08:00', note: '完成音素和基础拼读活动。',
+        objectives: [],
         activities: []
       },
       {
         id: 'v-2', label: '增加句子迁移', savedAt: '2026-09-24T15:30:00+08:00', note: '补充 A man sat and had a nap.',
+        objectives: [],
         activities: [
           {
-            id: 'a-1', type: '音素', title: '听音游戏：认识 /m/', content: '/m/', phonemes: ['/m/'], dependencies: [], difficulty: 1,
+            id: 'a-1', type: '音素', title: '听音游戏：认识 /m/', content: '/m/', phonemes: ['/m/'], dependencies: [], objectiveLinks: [], difficulty: 1,
             prompt: '闭上嘴唇，轻轻发出 /m/。', accessibility: '口型示范和重复音频。', duration: 6, feedback: ''
           },
           {
-            id: 'a-2', type: '音素', title: '首音识别：/s/ 与 /m/', content: '/s/ /m/', phonemes: ['/s/', '/m/'], dependencies: ['a-1'], difficulty: 1,
+            id: 'a-2', type: '音素', title: '首音识别：/s/ 与 /m/', content: '/s/ /m/', phonemes: ['/s/', '/m/'], dependencies: ['a-1'], objectiveLinks: [], difficulty: 1,
             prompt: '听到单词时拍手。', accessibility: '不同形状的视觉提示。', duration: 8, feedback: ''
           },
           {
-            id: 'a-3', type: '单词', title: '拼读短词：sat', content: 's – a – t → sat', phonemes: ['/s/', '/æ/', '/t/'], dependencies: ['a-2'], difficulty: 2,
+            id: 'a-3', type: '单词', title: '拼读短词：sat', content: 's – a – t → sat', phonemes: ['/s/', '/æ/', '/t/'], dependencies: ['a-2'], objectiveLinks: [], difficulty: 2,
             prompt: '用手指依次点每个字母。', accessibility: '键盘逐字聚焦。', duration: 10, feedback: '形成完整电路。'
           },
           {
-            id: 'a-6', type: '句子', title: '拼读句子：Mat sat.', content: 'Mat sat on the mat.', phonemes: ['/m/', '/æ/', '/s/', '/t/'], dependencies: ['a-3'], difficulty: 3,
+            id: 'a-6', type: '句子', title: '拼读句子：Mat sat.', content: 'Mat sat on the mat.', phonemes: ['/m/', '/æ/', '/s/', '/t/'], dependencies: ['a-3'], objectiveLinks: [], difficulty: 3,
             prompt: '先读每个单词，再按意群连读。', accessibility: '按词高亮。', duration: 10, feedback: '再试试更连贯。'
           }
         ]
@@ -174,11 +223,16 @@
   let versionDiff: VersionDiff[] = [];
 
   $: selectedActivity = course.activities.find((activity) => activity.id === selectedActivityId) ?? course.activities[0] ?? null;
-  $: diagnostics = analyzeCourse(course);
+  $: coverageRows = buildCoverageRows(course);
+  $: diagnostics = analyzeCourse(course, coverageRows);
   $: versionDiff = compareCourseVersions(course, compareBaseId, compareTargetId);
   $: errorCount = diagnostics.filter((issue) => issue.level === 'error').length;
   $: warningCount = diagnostics.filter((issue) => issue.level === 'warning').length;
   $: totalMinutes = course.activities.reduce((sum, activity) => sum + activity.duration, 0);
+  $: completeObjectiveCount = coverageRows.filter((row) => row.status === 'complete').length;
+  $: coverageGapCount = coverageRows.filter((row) => row.status !== 'complete').length;
+  $: unlinkedActivities = course.activities.filter((activity) => activity.objectiveLinks.length === 0);
+  $: danglingLinkCount = countDanglingLinks(course);
 
   onMount(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -210,6 +264,16 @@
   function migrateCourse(value: Course): Course {
     if (!value.id || !Array.isArray(value.activities)) return initialCourse();
     value.versions ??= [];
+    value.objectives ??= [];
+    value.activities.forEach((activity) => {
+      activity.objectiveLinks ??= [];
+    });
+    value.versions.forEach((version) => {
+      version.objectives ??= [];
+      version.activities.forEach((activity) => {
+        activity.objectiveLinks ??= [];
+      });
+    });
     return value;
   }
 
@@ -292,9 +356,9 @@
     const id = `a-${Date.now()}`;
     commit((draft) => {
       draft.activities.push({
-        id, type, title: `新的${type}活动`, content: '', phonemes: [], dependencies: [],
+        id, type, title: `新的${type}活动`, content: '', phonemes: [], dependencies: [], objectiveLinks: [],
         difficulty: 1, prompt: '请输入教师提示语。', accessibility: '请描述视觉、听觉或键盘无障碍支持。',
-        duration: type === '练习' ? 10 : 8, feedback: type === '练习' ? '' : ''
+        duration: type === '练习' ? 10 : 8, feedback: ''
       });
     });
     selectedActivityId = id;
@@ -319,6 +383,7 @@
     source.id = `a-${Date.now()}`;
     source.title = `${source.title}（副本）`;
     source.dependencies = [...source.dependencies];
+    source.objectiveLinks = source.objectiveLinks.map((link) => ({ ...link }));
     commit((draft) => {
       const index = draft.activities.findIndex((activity) => activity.id === selectedActivity?.id);
       draft.activities.splice(index + 1, 0, source);
@@ -350,12 +415,109 @@
     updateActivity('phonemes', value.split(/[\s,，、]+/).map((item) => item.trim()).filter(Boolean));
   }
 
+  function addObjective(): void {
+    const nextNo = course.objectives.reduce((max, item) => Math.max(max, item.no), 0) + 1;
+    const objective: Objective = {
+      id: `o-${Date.now()}`,
+      no: nextNo,
+      title: `教学目标 ${nextNo}`,
+      detail: '描述学生完成本课后应达成的表现。'
+    };
+    commit((draft) => {
+      draft.objectives.push(objective);
+    });
+  }
+
+  function updateObjective(id: string, field: 'title' | 'detail', value: string): void {
+    commit((draft) => {
+      const target = draft.objectives.find((objective) => objective.id === id);
+      if (target) target[field] = value;
+    });
+  }
+
+  function removeObjective(objective: Objective): void {
+    const references = countObjectiveReferences(course, objective.id);
+    const confirmed = window.confirm(
+      `目标 ${objectiveLabel(objective)}「${objective.title}」被 ${references} 处活动关联引用。\n\n` +
+      '删除前将先解除这些关联（覆盖表不会保留悬空项）。确定删除？'
+    );
+    if (!confirmed) return;
+    commit((draft) => {
+      draft.objectives = draft.objectives.filter((item) => item.id !== objective.id);
+      draft.activities.forEach((activity) => {
+        activity.objectiveLinks = activity.objectiveLinks.filter((link) => link.objectiveId !== objective.id);
+      });
+    });
+  }
+
+  function countObjectiveReferences(current: Course, objectiveId: string): number {
+    return current.activities.reduce(
+      (sum, activity) => sum + activity.objectiveLinks.filter((link) => link.objectiveId === objectiveId).length,
+      0
+    );
+  }
+
+  function countDanglingLinks(current: Course): number {
+    const ids = new Set(current.objectives.map((objective) => objective.id));
+    return current.activities.reduce(
+      (sum, activity) => sum + activity.objectiveLinks.filter((link) => !ids.has(link.objectiveId)).length,
+      0
+    );
+  }
+
+  function toggleObjectiveLink(objectiveId: string, phase: LinkPhase, checked: boolean): void {
+    if (!selectedActivity) return;
+    const activityId = selectedActivity.id;
+    commit((draft) => {
+      const target = draft.activities.find((activity) => activity.id === activityId);
+      if (!target) return;
+      const others = target.objectiveLinks.filter(
+        (link) => !(link.objectiveId === objectiveId && link.phase === phase)
+      );
+      target.objectiveLinks = checked
+        ? [...others, { objectiveId, phase }]
+        : others;
+    });
+  }
+
+  function objectiveLabel(objective: Objective): string {
+    return `目标 ${String(objective.no).padStart(2, '0')}`;
+  }
+
+  function buildCoverageRows(current: Course): CoverageRow[] {
+    return current.objectives.map((objective) => {
+      const introduce: CoverageEntry[] = [];
+      const reinforce: CoverageEntry[] = [];
+      current.activities.forEach((activity, index) => {
+        activity.objectiveLinks.forEach((link) => {
+          if (link.objectiveId !== objective.id) return;
+          if (link.phase === 'introduce') introduce.push({ activity, index, phase: 'introduce' });
+          else reinforce.push({ activity, index, phase: 'reinforce' });
+        });
+      });
+      const firstIntroduceIndex = introduce.length ? Math.min(...introduce.map((entry) => entry.index)) : -1;
+      const orderIssues = firstIntroduceIndex === -1
+        ? []
+        : reinforce
+            .filter((entry) => entry.index < firstIntroduceIndex)
+            .map((reinforceEntry) => ({ reinforceEntry, firstIntroduceIndex }));
+      const status: CoverageRow['status'] =
+        introduce.length === 0 && reinforce.length === 0
+          ? 'empty'
+          : introduce.length === 0 || reinforce.length === 0 || orderIssues.length > 0
+            ? 'gap'
+            : 'complete';
+      return { objective, introduce, reinforce, orderIssues, status };
+    });
+  }
+
   function saveVersion(): void {
     const versionNumber = course.versions.length + 1;
     commit((draft) => {
       draft.versions.push({
         id: `v-${Date.now()}`, label: `版本 ${versionNumber}`, savedAt: new Date().toISOString(),
         note: `保存 ${draft.activities.length} 个活动，总计 ${draft.activities.reduce((sum, item) => sum + item.duration, 0)} 分钟。`,
+        objectives: structuredClone(draft.objectives),
         activities: structuredClone(draft.activities)
       });
     });
@@ -383,11 +545,15 @@
   }
 
   function focusIssue(issue: Diagnostic): void {
+    if (issue.target === 'coverage') {
+      activeView = 'coverage';
+      return;
+    }
     selectedActivityId = issue.activityId;
     activeView = 'compose';
   }
 
-  function analyzeCourse(current: Course): Diagnostic[] {
+  function analyzeCourse(current: Course, rows: CoverageRow[] = buildCoverageRows(current)): Diagnostic[] {
     const issues: Diagnostic[] = [];
     const learned = new Set<string>();
     const seenPhonemes: Array<{ activity: Activity; phoneme: string }> = [];
@@ -431,6 +597,61 @@
           id: `missing-dep-${activity.id}-${dependency}`, activityId: activity.id, level: 'error', category: '依赖缺失',
           title: `${activity.title} 的依赖已不存在`, detail: '请移除失效依赖或重新选择前置活动。'
         });
+      });
+    });
+
+    rows.forEach((row) => {
+      const label = `${objectiveLabel(row.objective)}「${row.objective.title}」`;
+      const entryName = (entry: CoverageEntry): string =>
+        `第 ${entry.index + 1} 个活动「${entry.activity.title}」`;
+
+      if (row.introduce.length === 0 && row.reinforce.length === 0) {
+        issues.push({
+          id: `obj-empty-${row.objective.id}`, activityId: '', level: 'warning', category: '目标覆盖', target: 'coverage',
+          title: `${label} 还没有关联任何活动`,
+          detail: '在活动编辑器的“目标关联”中分别安排引入与巩固活动。'
+        });
+      } else {
+        if (row.introduce.length === 0) issues.push({
+          id: `obj-no-intro-${row.objective.id}`, activityId: '', level: 'warning', category: '目标覆盖', target: 'coverage',
+          title: `${label} 缺少引入活动`,
+          detail: `当前只有巩固活动（${row.reinforce.map(entryName).join('、')}），学生还没有先学这一目标。`
+        });
+        if (row.reinforce.length === 0) issues.push({
+          id: `obj-no-reinforce-${row.objective.id}`, activityId: row.introduce[0]?.activity.id ?? '', level: 'warning', category: '目标覆盖', target: 'coverage',
+          title: `${label} 缺少巩固活动`,
+          detail: `当前只有引入活动（${row.introduce.map(entryName).join('、')}），请在其后安排练习或迁移活动。`
+        });
+      }
+
+      row.orderIssues.forEach(({ reinforceEntry, firstIntroduceIndex }) => {
+        const firstIntroduce = current.activities[firstIntroduceIndex];
+        issues.push({
+          id: `obj-order-${row.objective.id}-${reinforceEntry.activity.id}`,
+          activityId: reinforceEntry.activity.id, level: 'error', category: '目标顺序', target: 'coverage',
+          title: `${label} 的巩固排在引入之前`,
+          detail: `巩固活动「${reinforceEntry.activity.title}」位于第 ${reinforceEntry.index + 1} 位，` +
+            `而引入活动「${firstIntroduce?.title ?? ''}」在第 ${firstIntroduceIndex + 1} 位。` +
+            '请把巩固活动移到引入活动之后，或把该关联标记为引入。'
+        });
+      });
+    });
+
+    current.activities.forEach((activity) => {
+      const dangling = activity.objectiveLinks.filter(
+        (link) => !current.objectives.some((objective) => objective.id === link.objectiveId)
+      );
+      dangling.forEach((link) => {
+        issues.push({
+          id: `obj-dangling-${activity.id}-${link.objectiveId}`, activityId: activity.id, level: 'error', category: '目标关联', target: 'coverage',
+          title: `${activity.title} 引用了已删除的目标`,
+          detail: `目标编号 ${link.objectiveId} 已不存在，覆盖表中出现悬空项。请在活动编辑器移除该关联，或重新选择目标。`
+        });
+      });
+      if (activity.objectiveLinks.length === 0) issues.push({
+        id: `obj-unlinked-${activity.id}`, activityId: activity.id, level: 'info', category: '目标覆盖',
+        title: `${activity.title} 未关联教学目标`,
+        detail: '为活动选择至少一个教学目标，并注明它承担引入还是巩固，才能在覆盖表中追踪。'
       });
     });
 
@@ -478,6 +699,25 @@
     return cycle.length ? cycle : null;
   }
 
+  function linkSignature(activity: Activity): string {
+    return JSON.stringify(
+      activity.objectiveLinks
+        .map((link) => `${link.objectiveId}:${link.phase}`)
+        .sort()
+    );
+  }
+
+  function linkSummary(activity: Activity, objectives: Objective[]): string {
+    if (!activity.objectiveLinks.length) return '未关联目标';
+    return activity.objectiveLinks
+      .map((link) => {
+        const objective = objectives.find((item) => item.id === link.objectiveId);
+        const label = objective ? objectiveLabel(objective) : link.objectiveId;
+        return `${label}·${link.phase === 'introduce' ? '引入' : '巩固'}`;
+      })
+      .join('、');
+  }
+
   function compareCourseVersions(current: Course, baseId: string, targetId: string): VersionDiff[] {
     const base = current.versions.find((version) => version.id === baseId);
     const target = current.versions.find((version) => version.id === targetId);
@@ -485,13 +725,40 @@
     const rows: VersionDiff[] = [];
     const baseMap = new Map(base.activities.map((activity) => [activity.id, activity]));
     const targetMap = new Map(target.activities.map((activity) => [activity.id, activity]));
+    const baseObjectiveMap = new Map(base.objectives.map((objective) => [objective.id, objective]));
+    const targetObjectiveMap = new Map(target.objectives.map((objective) => [objective.id, objective]));
+
+    for (const objective of base.objectives) {
+      if (!targetObjectiveMap.has(objective.id)) rows.push({
+        id: objective.id, title: `${objectiveLabel(objective)} ${objective.title}`, kind: 'removed',
+        detail: '教学目标：目标版本已删除该目标及其关联'
+      });
+    }
+    for (const objective of target.objectives) {
+      const before = baseObjectiveMap.get(objective.id);
+      if (!before) {
+        rows.push({
+          id: objective.id, title: `${objectiveLabel(objective)} ${objective.title}`, kind: 'added',
+          detail: '教学目标：目标版本新增该目标'
+        });
+        continue;
+      }
+      if (before.title !== objective.title || before.detail !== objective.detail) rows.push({
+        id: objective.id, title: `${objectiveLabel(objective)} ${objective.title}`, kind: 'changed',
+        detail: `教学目标改名/描述调整：${before.title} → ${objective.title}`
+      });
+    }
+
     for (const activity of base.activities) {
       if (!targetMap.has(activity.id)) rows.push({ id: activity.id, title: activity.title, kind: 'removed', detail: '目标版本已删除该活动' });
     }
     for (const activity of target.activities) {
       const before = baseMap.get(activity.id);
       if (!before) {
-        rows.push({ id: activity.id, title: activity.title, kind: 'added', detail: `${activity.type} · ${activity.duration} 分钟` });
+        rows.push({
+          id: activity.id, title: activity.title, kind: 'added',
+          detail: `${activity.type} · ${activity.duration} 分钟${activity.objectiveLinks.length ? ` · ${linkSummary(activity, target.objectives)}` : ''}`
+        });
         continue;
       }
       const fields: string[] = [];
@@ -500,9 +767,17 @@
       if (before.difficulty !== activity.difficulty) fields.push('难度');
       if (before.duration !== activity.duration) fields.push('时长');
       if (JSON.stringify(before.dependencies) !== JSON.stringify(activity.dependencies)) fields.push('依赖');
+      if (linkSignature(before) !== linkSignature(activity)) {
+        fields.push('目标关联');
+      }
       if (before.prompt !== activity.prompt || before.accessibility !== activity.accessibility) fields.push('提示或无障碍');
       if (before.feedback !== activity.feedback) fields.push('练习反馈');
-      if (fields.length) rows.push({ id: activity.id, title: activity.title, kind: 'changed', detail: `变化字段：${fields.join('、')}` });
+      if (fields.length) {
+        const linkDetail = fields.includes('目标关联')
+          ? `；目标关联：${linkSummary(before, base.objectives)} → ${linkSummary(activity, target.objectives)}`
+          : '';
+        rows.push({ id: activity.id, title: activity.title, kind: 'changed', detail: `变化字段：${fields.join('、')}${linkDetail}` });
+      }
     }
     return rows;
   }
@@ -594,9 +869,10 @@
 
   <nav class="workspace-tabs" aria-label="工作区">
     <button class:active={activeView === 'compose'} on:click={() => activeView = 'compose'}><span>01</span><b>课程编排</b><small>活动、依赖与教学说明</small></button>
-    <button class:active={activeView === 'path'} on:click={() => activeView = 'path'}><span>02</span><b>学习路径</b><small>多屏幕顺序预览</small></button>
-    <button class:active={activeView === 'issues'} on:click={() => activeView = 'issues'}><span>03</span><b>质量检查</b><small>音素、句子与反馈</small></button>
-    <button class:active={activeView === 'versions'} on:click={() => activeView = 'versions'}><span>04</span><b>版本与复用</b><small>复制、存档与比较</small></button>
+    <button class:active={activeView === 'coverage'} on:click={() => activeView = 'coverage'}><span>02</span><b>目标覆盖</b><small>先教后练对照表</small></button>
+    <button class:active={activeView === 'path'} on:click={() => activeView = 'path'}><span>03</span><b>学习路径</b><small>多屏幕顺序预览</small></button>
+    <button class:active={activeView === 'issues'} on:click={() => activeView = 'issues'}><span>04</span><b>质量检查</b><small>目标顺序、音素与反馈</small></button>
+    <button class:active={activeView === 'versions'} on:click={() => activeView = 'versions'}><span>05</span><b>版本与复用</b><small>复制、存档与比较</small></button>
   </nav>
 
   {#if activeView === 'compose'}
@@ -616,7 +892,7 @@
             <button class:selected={activity.id === selectedActivityId} class="activity-row" on:click={() => selectedActivityId = activity.id}>
               <span class="sequence">{String(index + 1).padStart(2, '0')}</span>
               <span class="activity-type {activity.type}">{activity.type}</span>
-              <span class="activity-copy"><b>{activity.title}</b><small>{activity.duration} 分钟 · 难度 {activity.difficulty}/5</small></span>
+              <span class="activity-copy"><b>{activity.title}</b><small>{activity.duration} 分钟 · 难度 {activity.difficulty}/5{#if activity.objectiveLinks.length} · 目标 ×{activity.objectiveLinks.length}{/if}</small></span>
               {#if activity.dependencies.length}<i title="有前置依赖">↳</i>{/if}
             </button>
           {/each}
@@ -663,6 +939,40 @@
 
           <Tile class="dependency-card">
             <div class="section-title">
+              <div><span class="kicker">OBJECTIVE COVERAGE</span><h3>目标关联：引入还是巩固</h3><p>同一活动可关联多个教学目标，并注明它对每个目标承担“先教”还是“后练”。</p></div>
+              <Tag type="cool-gray">{selectedActivity.objectiveLinks.length} 项关联</Tag>
+            </div>
+            {#if course.objectives.length === 0}
+              <p class="empty-state">还没有教学目标。先到“目标覆盖”页添加目标，再回到这里关联。</p>
+              <Button size="small" kind="ghost" on:click={() => activeView = 'coverage'}>去添加目标</Button>
+            {:else}
+              <div class="objective-link-grid">
+                {#each course.objectives as objective (objective.id)}
+                  <div class="objective-link-row">
+                    <div class="objective-link-head">
+                      <b>{objectiveLabel(objective)}</b>
+                      <span title={objective.detail}>{objective.title}</span>
+                    </div>
+                    <div class="objective-link-toggle">
+                      <Checkbox
+                        labelText="引入（先教）"
+                        checked={selectedActivity.objectiveLinks.some((link) => link.objectiveId === objective.id && link.phase === 'introduce')}
+                        on:change={(event) => toggleObjectiveLink(objective.id, 'introduce', readChecked(event))}
+                      />
+                      <Checkbox
+                        labelText="巩固（后练）"
+                        checked={selectedActivity.objectiveLinks.some((link) => link.objectiveId === objective.id && link.phase === 'reinforce')}
+                        on:change={(event) => toggleObjectiveLink(objective.id, 'reinforce', readChecked(event))}
+                      />
+                    </div>
+                  </div>
+                {/each}
+              </div>
+            {/if}
+          </Tile>
+
+          <Tile class="dependency-card">
+            <div class="section-title">
               <div><span class="kicker">PREREQUISITES</span><h3>前置活动与依赖关系</h3><p>只有完成选中的活动后，系统才会按当前顺序推荐本活动。</p></div>
               <Tag type="cool-gray">{selectedActivity.dependencies.length} 个依赖</Tag>
             </div>
@@ -702,6 +1012,124 @@
     </main>
   {/if}
 
+  {#if activeView === 'coverage'}
+    <main class="coverage-view">
+      <div class="view-heading">
+        <div><span class="kicker">OBJECTIVE MATRIX</span><h2>教学目标覆盖表</h2><p>检查每个目标是否既有“引入（先教）”又有“巩固（后练）”；改名只改文字，移动活动不影响关联，编号稳定保留。</p></div>
+        <div class="issue-summary">
+          <span><b>{completeObjectiveCount}</b> 已覆盖</span>
+          <span><b class:critical={coverageGapCount > 0}>{coverageGapCount}</b> 存在缺口/倒置</span>
+          <span><b class:critical={danglingLinkCount > 0}>{danglingLinkCount}</b> 悬空关联</span>
+        </div>
+      </div>
+
+      <Tile class="objective-manager">
+        <div class="section-title">
+          <div><span class="kicker">OBJECTIVES</span><h3>教学目标清单</h3><p>编号在删除目标前会先解除全部活动引用；请确认后再删除，覆盖表不会留下悬空项。</p></div>
+          <Button size="small" kind="primary" on:click={addObjective}>添加目标</Button>
+        </div>
+        {#if course.objectives.length === 0}
+          <p class="empty-state">还没有教学目标。点击“添加目标”开始，或在活动编辑器中随时回来关联。</p>
+        {/if}
+        <div class="objective-edit-grid">
+          {#each course.objectives as objective (objective.id)}
+            <article class="objective-edit-card">
+              <header>
+                <Tag type="cool-gray">{objectiveLabel(objective)}</Tag>
+                <Button
+                  size="small" kind="danger-ghost"
+                  on:click={() => removeObjective(objective)}
+                >删除（先解除引用）</Button>
+              </header>
+              <TextInput
+                labelText="目标名称（改名不影响编号与关联）"
+                value={objective.title}
+                on:input={(event) => updateObjective(objective.id, 'title', readText(event))}
+              />
+              <TextArea
+                labelText="达成表现"
+                rows={2}
+                value={objective.detail}
+                on:input={(event) => updateObjective(objective.id, 'detail', readText(event))}
+              />
+            </article>
+          {/each}
+        </div>
+      </Tile>
+
+      <div class="coverage-board">
+        <div class="coverage-head">
+          <span class="col-objective">教学目标</span>
+          <span class="col-phase">引入 · 先教</span>
+          <span class="col-phase">巩固 · 后练</span>
+          <span class="col-status">状态</span>
+        </div>
+        {#each coverageRows as row (row.objective.id)}
+          {@const hasOrderIssue = row.orderIssues.length > 0}
+          <article class:gap={row.status !== 'complete'} class:order-issue={hasOrderIssue} class="coverage-row">
+            <div class="col-objective">
+              <b>{objectiveLabel(row.objective)}</b>
+              <strong>{row.objective.title}</strong>
+              <p>{row.objective.detail}</p>
+            </div>
+            <div class="col-phase">
+              {#each row.introduce as entry (entry.activity.id + '-intro')}
+                <button class="coverage-chip introduce" on:click={() => { selectedActivityId = entry.activity.id; activeView = 'compose'; }}>
+                  <i>{entry.index + 1}</i><span>{entry.activity.title}</span>
+                </button>
+              {:else}
+                <span class="coverage-missing">缺少引入活动</span>
+              {/each}
+            </div>
+            <div class="col-phase">
+              {#each row.reinforce as entry (entry.activity.id + '-reinforce')}
+                {@const misplaced = entry.index < (row.introduce.length ? Math.min(...row.introduce.map((item) => item.index)) : Infinity)}
+                <button class:misplaced={misplaced} class="coverage-chip reinforce" title={misplaced ? '该巩固活动排在引入活动之前' : ''} on:click={() => { selectedActivityId = entry.activity.id; activeView = 'compose'; }}>
+                  <i>{entry.index + 1}</i><span>{entry.activity.title}</span>{#if misplaced}<em>倒置</em>{/if}
+                </button>
+              {:else}
+                <span class="coverage-missing">缺少巩固活动</span>
+              {/each}
+            </div>
+            <div class="col-status">
+              {#if row.status === 'complete'}
+                <Tag type="green">先教后练完整</Tag>
+              {:else if hasOrderIssue}
+                <Tag type="red">顺序倒置</Tag>
+                <small>巩固排在引入之前，见质量检查</small>
+                <Button size="small" kind="ghost" on:click={() => activeView = 'issues'}>查看问题</Button>
+              {:else}
+                <Tag type="magenta">覆盖缺口</Tag>
+                <small>{row.status === 'empty' ? '尚无关联活动' : '引入或巩固缺一项'}</small>
+              {/if}
+            </div>
+          </article>
+        {/each}
+        {#if coverageRows.length === 0}
+          <Tile><p class="empty-state">添加教学目标后，这里会生成每个目标的引入/巩固对照。</p></Tile>
+        {/if}
+      </div>
+
+      <Tile class="unlinked-card">
+        <div class="section-title">
+          <div><span class="kicker">UNLINKED ACTIVITIES</span><h3>未关联目标的活动（{unlinkedActivities.length}）</h3><p>这些活动不会计入任何目标的覆盖统计。</p></div>
+        </div>
+        {#if unlinkedActivities.length === 0}
+          <p class="empty-state">所有活动都至少关联了一个教学目标。</p>
+        {:else}
+          <div class="unlinked-list">
+            {#each unlinkedActivities as activity (activity.id)}
+              <button on:click={() => { selectedActivityId = activity.id; activeView = 'compose'; }}>
+                <i>{course.activities.indexOf(activity) + 1}</i>
+                <span><b>{activity.title}</b><small>{activity.type} · {activity.duration} 分钟</small></span>
+              </button>
+            {/each}
+          </div>
+        {/if}
+      </Tile>
+    </main>
+  {/if}
+
   {#if activeView === 'path'}
     <main class="path-view">
       <div class="path-toolbar">
@@ -727,7 +1155,15 @@
                   {#if activity.prompt}<blockquote>{activity.prompt}</blockquote>{/if}
                   <div class="lesson-tags">
                     {#each activity.phonemes as phoneme}<span>{phoneme}</span>{/each}
-                    <em>{activity.duration} 分钟</em>
+                    {#each activity.objectiveLinks as link (link.objectiveId + link.phase)}
+                      {@const objective = course.objectives.find((item) => item.id === link.objectiveId)}
+                      {#if objective}
+                        <em class:phase-intro={link.phase === 'introduce'} class:phase-reinforce={link.phase === 'reinforce'} class="phase-tag">
+                          {objectiveLabel(objective)}·{link.phase === 'introduce' ? '引入' : '巩固'}
+                        </em>
+                      {/if}
+                    {/each}
+                    <em class="duration-tag">{activity.duration} 分钟</em>
                   </div>
                   {#if activity.dependencies.length}<small>前置：{activity.dependencies.map((id) => course.activities.find((item) => item.id === id)?.title).filter(Boolean).join('、')}</small>{/if}
                 </div>
@@ -743,7 +1179,7 @@
   {#if activeView === 'issues'}
     <main class="issues-view">
       <div class="view-heading">
-        <div><span class="kicker">CURRICULUM QA</span><h2>课程质量检查</h2><p>检查前置知识、相似音、例句长度、练习反馈、无障碍说明和依赖完整性。</p></div>
+        <div><span class="kicker">CURRICULUM QA</span><h2>课程质量检查</h2><p>检查每个教学目标的引入/巩固顺序、前置知识、相似音、例句长度、练习反馈、无障碍说明和依赖完整性。</p></div>
         <div class="issue-summary"><span><b>{errorCount}</b> 必须处理</span><span><b>{warningCount}</b> 建议调整</span><span><b>{diagnostics.length}</b> 全部提示</span></div>
       </div>
       <div class="issue-board">
@@ -751,13 +1187,14 @@
           <article class:critical={issue.level === 'error'} class:caution={issue.level === 'warning'} class:info={issue.level === 'info'}>
             <span class="issue-index">{String(index + 1).padStart(2, '0')}</span>
             <div><div class="issue-meta"><Tag type={issue.level === 'error' ? 'red' : issue.level === 'warning' ? 'magenta' : 'blue'}>{issue.category}</Tag><small>{issue.level === 'error' ? '必须处理' : issue.level === 'warning' ? '建议调整' : '教学提示'}</small></div><h3>{issue.title}</h3><p>{issue.detail}</p></div>
-            <Button size="small" kind="ghost" on:click={() => focusIssue(issue)}>定位活动</Button>
+            <Button size="small" kind="ghost" on:click={() => focusIssue(issue)}>{issue.target === 'coverage' ? '查看覆盖表' : '定位活动'}</Button>
           </article>
         {:else}
           <Tile class="all-clear"><h3>课程检查通过</h3><p>教学顺序、反馈与无障碍说明均已完成。</p></Tile>
         {/each}
         {#if diagnostics.length}
           <div class="rule-grid">
+            <Tile><span>教学目标</span><strong>先教后练</strong><p>每个目标都要有引入和巩固；巩固排在引入之前会阻断。</p></Tile>
             <Tile><span>前置知识</span><strong>先教后用</strong><p>非音素活动使用未单独教学的音素时阻断。</p></Tile>
             <Tile><span>相似音</span><strong>对比教学</strong><p>发现 /b/-/p/、/f/-/v/ 等音对时建议增加辨音。</p></Tile>
             <Tile><span>例句</span><strong>≤ 12 词</strong><p>超过建议长度时提示拆分意群。</p></Tile>
@@ -771,7 +1208,7 @@
   {#if activeView === 'versions'}
     <main class="versions-view">
       <div class="view-heading">
-        <div><span class="kicker">REUSE & HISTORY</span><h2>版本与课程复用</h2><p>复制课程不会覆盖原课程；存档版本包含完整活动、依赖和教学说明。</p></div>
+        <div><span class="kicker">REUSE & HISTORY</span><h2>版本与课程复用</h2><p>复制课程不会覆盖原课程；存档版本包含完整教学目标、目标关联、活动、依赖和教学说明，比较时可看到目标增删改名与关联变化。</p></div>
         <div class="version-actions"><Button kind="tertiary" on:click={copyCourse}>复制课程</Button><Button kind="primary" on:click={saveVersion}>保存新版本</Button></div>
       </div>
       <div class="version-layout-svelte">
